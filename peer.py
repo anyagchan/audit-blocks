@@ -264,11 +264,11 @@ def run_peer(my_port, tracker_ip, tracker_port):
     threading.Thread(target=miner_loop, daemon=True).start()
     threading.Thread(target=sync_chain_on_startup, args=(my_port,), daemon=True).start()
 
-    # Optional test TXs
+    # # Optional test TXs
     if my_port == 10001:
         mempool.append(Transaction("W001","2025-05-02","09:00","17:00","sigW","sigS"))
-    elif my_port == 10002:
-        mempool.append(Transaction("W002","2025-05-02","09:00","17:00","sigW2","sigS2"))
+    # elif my_port == 10002:
+    #     mempool.append(Transaction("W002","2025-05-02","09:00","17:00","sigW2","sigS2"))
 
     atexit.register(leave_network, tracker_ip, tracker_port, my_port)
     while True:
