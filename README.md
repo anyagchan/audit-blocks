@@ -19,7 +19,9 @@ No other dependencies are required for compilation
 ## Usage of the Code
 # Run the Tracker: 
    python tracker.py
-# Starting peers: python peer.py <peer_port> <tracker_ip> <tracker_port>
+# Starting peers: 
+    python peer.py <peer_port> <tracker_ip> <tracker_port>
+    
     python peer.py 10001 127.0.0.1 9000
     python peer.py 10002 127.0.0.1 9000
 # Starting the frontend application
