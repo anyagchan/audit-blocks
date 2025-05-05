@@ -16,6 +16,15 @@ USERS = {
 }
 
 def authenticate(data):
+    """
+    Authenticate a user based on username and password.
+
+    Args:
+        data (dict): JSON object containing 'username' and 'password'.
+
+    Returns:
+        str or None: User role if authenticated, else None.
+    """
     u = data.get('username'); p = data.get('password')
     if u in USERS and USERS[u][0] == p:
         return USERS[u][1]
@@ -23,6 +32,12 @@ def authenticate(data):
 
 @app.route('/submit', methods=['POST'])
 def submit_shift():
+    """
+    Submit a shift transaction to the blockchain.
+
+    Returns:
+        Response: JSON indicating success or failure.
+    """
     data = request.get_json() or {}
     if authenticate(data) != 'worker':
         return jsonify({'error':'Unauthorized'}),403
@@ -42,10 +57,22 @@ def submit_shift():
 
 @app.route('/chain', methods=['GET'])
 def view_chain():
+    """
+    View the current blockchain.
+
+    Returns:
+        Response: JSON representation of the blockchain.
+    """
     return jsonify(peer_state['blockchain']),200
 
 @app.route('/approve', methods=['POST'])
 def approve_shift():
+    """
+    Approve a shift transaction by a manager.
+
+    Returns:
+        Response: JSON indicating approval or error.
+    """
     data = request.get_json() or {}
     if authenticate(data) != 'manager':
         return jsonify({'error':'Unauthorized'}),403
@@ -60,6 +87,12 @@ def approve_shift():
 
 @app.route('/reject', methods=['POST'])
 def reject_shift():
+    """
+    Reject a shift transaction by a manager.
+
+    Returns:
+        Response: JSON indicating rejection or error.
+    """
     data = request.get_json() or {}
     if authenticate(data) != 'manager':
         return jsonify({'error':'Unauthorized'}),403
@@ -74,6 +107,12 @@ def reject_shift():
 
 @app.route('/export', methods=['GET'])
 def export_chain():
+    """
+    Export the blockchain as a CSV file.
+
+    Returns:
+        Response: CSV file containing all blockchain transactions.
+    """
     si = StringIO(); w = csv.writer(si)
     w.writerow(['block_index','timestamp','worker_id','date','start','end',
                 'worker_signature','supervisor_signature','block_hash'])
@@ -93,6 +132,12 @@ def export_chain():
 
 @app.route('/anomalies', methods=['GET'])
 def detect_anomalies():
+    """
+    Detect overlapping shift transactions in the blockchain.
+
+    Returns:
+        Response: JSON list of detected anomalies.
+    """
     anomalies=[]; per_worker={}
     from datetime import datetime as dt
     for b in peer_state['blockchain']:
@@ -117,6 +162,12 @@ def detect_anomalies():
 
 @app.route('/test-tamper', methods=['GET'])
 def test_tamper():
+    """
+    Simulate a tampered block broadcast to peers.
+
+    Returns:
+        Response: JSON status of the tamper attempt.
+    """
     if not peer_state['blockchain']:
         return jsonify({'error':'no blocks'}),400
     blk = copy.deepcopy(peer_state['blockchain'][0])

@@ -18,6 +18,17 @@ child_to_parent = {}
 orphans      = {}
 
 def adjust_difficulty(chain, window=10, target_seconds=60):
+    """
+    Adjust the mining difficulty based on the actual time taken to mine the last `window` blocks.
+
+    Args:
+        chain (list): The blockchain to evaluate.
+        window (int, optional): Number of recent blocks to consider. Defaults to 10.
+        target_seconds (int, optional): Target time per block in seconds. Defaults to 60.
+
+    Returns:
+        int: New difficulty value.
+    """
     if len(chain) < window + 1:
         return DIFFICULTY
     last = chain[-1]
@@ -29,6 +40,14 @@ def adjust_difficulty(chain, window=10, target_seconds=60):
     return max(1, int(diff * (actual / expected)))
 
 def register_with_tracker(tracker_ip, tracker_port, my_port):
+    """
+    Register the peer with the tracker server and receive the current peer list.
+
+    Args:
+        tracker_ip (str): IP address of the tracker.
+        tracker_port (int): Port number of the tracker.
+        my_port (int): Port number of this peer.
+    """
     msg = json.dumps({"type": "JOIN", "port": my_port})
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((tracker_ip, tracker_port))
@@ -39,6 +58,13 @@ def register_with_tracker(tracker_ip, tracker_port, my_port):
     print("[PEER] Joined network. Peer list:", peer_state["peers"])
 
 def periodically_refresh_peers(tracker_ip, tracker_port):
+    """
+    Periodically fetch the updated list of peers from the tracker.
+
+    Args:
+        tracker_ip (str): IP address of the tracker.
+        tracker_port (int): Port number of the tracker.
+    """
     while True:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,7 +79,14 @@ def periodically_refresh_peers(tracker_ip, tracker_port):
         time.sleep(10)
 
 def send_heartbeat(tracker_ip, tracker_port, my_port):
-    """Heartbeat to tracker every 10s."""
+    """
+    Send periodic heartbeat messages to the tracker to indicate that this peer is alive.
+
+    Args:
+        tracker_ip (str): IP address of the tracker.
+        tracker_port (int): Port number of the tracker.
+        my_port (int): Port number of this peer.
+    """
     while True:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -65,6 +98,14 @@ def send_heartbeat(tracker_ip, tracker_port, my_port):
         time.sleep(10)
 
 def leave_network(tracker_ip, tracker_port, my_port):
+    """
+    Notify the tracker that this peer is leaving the network.
+
+    Args:
+        tracker_ip (str): IP address of the tracker.
+        tracker_port (int): Port number of the tracker.
+        my_port (int): Port number of this peer.
+    """
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((tracker_ip, tracker_port))
@@ -74,6 +115,12 @@ def leave_network(tracker_ip, tracker_port, my_port):
         pass
 
 def start_peer_server(my_port):
+    """
+    Start a TCP server to listen for incoming peer messages.
+
+    Args:
+        my_port (int): Port number to bind the server to.
+    """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(("0.0.0.0", my_port))
     s.listen()
@@ -83,11 +130,17 @@ def start_peer_server(my_port):
         threading.Thread(target=handle_peer_connection, args=(conn, addr)).start()
 
 def handle_peer_connection(conn, addr):
+    """
+    Handle incoming connections from other peers.
+
+    Args:
+        conn (socket): The socket connection.
+        addr (tuple): The address of the sender.
+    """
     try:
         data = conn.recv(65536).decode()
         msg  = json.loads(data)
 
-        # — Pushed peer-list update from tracker —
         if msg.get("type") == "UPDATE_PEERS":
             peer_state["peers"] = msg["peers"]
             print("[PEER] Received updated peer list:", peer_state["peers"])
@@ -98,11 +151,9 @@ def handle_peer_connection(conn, addr):
             h     = block["hash"]
             prev  = block["prev_hash"]
 
-            # 1) Duplicate?
             if h in block_map:
                 return
 
-            # 2) Merkle-root check
             def compute_merkle(tx_list):
                 tx_hashes = [hashlib.sha256(json.dumps(tx, sort_keys=True).encode()).hexdigest()
                              for tx in tx_list]
@@ -114,28 +165,25 @@ def handle_peer_connection(conn, addr):
                         nl.append(hashlib.sha256((L+R).encode()).hexdigest())
                     tx_hashes = nl
                 return tx_hashes[0] if tx_hashes else ''
+            
             if compute_merkle(block["transactions"]) != block["merkle_root"]:
                 print("[PEER] Invalid Merkle root — rejecting", h[:6])
                 return
 
-            # 3) PoW check
             hdr = f'{block["index"]}{prev}{block["merkle_root"]}{block["timestamp"]}{block["nonce"]}'
             if hashlib.sha256(hdr.encode()).hexdigest() != h \
                or not h.startswith("0"*block["difficulty"]):
                 print("[PEER] Invalid PoW — rejecting", h[:6])
                 return
 
-            # 4) Orphan?
             if prev != "0"*64 and prev not in block_map:
                 orphans[h] = block
                 print(f"[PEER] Received orphan {h[:6]}…")
                 return
 
-            # 5) Cumulative difficulty
             parent_cd = block_map.get(prev, {}).get("cum_diff", 0)
             block["cum_diff"] = parent_cd + block["difficulty"]
 
-            # Append & propagate
             block_map[h] = block
             child_to_parent[h] = prev
             resolve_chain(h)
@@ -154,15 +202,18 @@ def handle_peer_connection(conn, addr):
             if msg["blocks"]:
                 resolve_chain(msg["blocks"][-1]["hash"])
 
-        elif msg.get("type") == "PING":
-            conn.sendall(json.dumps({"type": "PONG"}).encode())
-
     except Exception as e:
         print("[PEER] Error:", e)
     finally:
         conn.close()
 
 def broadcast_to_peers(msg):
+    """
+    Broadcast a message to all known peers.
+
+    Args:
+        msg (dict): Message to send.
+    """
     for p in peer_state["peers"]:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -173,6 +224,9 @@ def broadcast_to_peers(msg):
             pass
 
 def mine_block():
+    """
+    Attempt to mine a new block from the mempool and propagate it.
+    """
     if not mempool:
         return
     prev = peer_state["blockchain"][-1] if peer_state["blockchain"] else None
@@ -204,12 +258,20 @@ def mine_block():
     mempool[:] = [tx for tx in mempool if tx.to_dict() not in bd["transactions"]]
 
 def miner_loop():
+    """
+    Background loop to periodically mine blocks.
+    """
     while True:
         time.sleep(60)
         mine_block()
 
 def resolve_chain(tip_hash):
-    """Pick the chain with highest cumulative difficulty."""
+    """
+    Resolve the best blockchain based on cumulative difficulty.
+
+    Args:
+        tip_hash (str): The hash of the current tip block.
+    """
     new_chain = []
     cur = tip_hash
     seen = set()
@@ -226,6 +288,12 @@ def resolve_chain(tip_hash):
         print(f"[PEER] Switched to chain (cum-diff={new_cd})")
 
 def unblock_orphans(parent_hash):
+    """
+    Attempt to reintegrate any orphaned blocks that now have a known parent.
+
+    Args:
+        parent_hash (str): The hash of the newly accepted block.
+    """
     for h, b in list(orphans.items()):
         if b["prev_hash"] == parent_hash:
             del orphans[h]
@@ -237,6 +305,12 @@ def unblock_orphans(parent_hash):
             unblock_orphans(h)
 
 def sync_chain_on_startup(my_port):
+    """
+    Synchronize the blockchain on peer startup by requesting the chain from another peer.
+
+    Args:
+        my_port (int): This peer's port number.
+    """
     time.sleep(2)
     for p in peer_state["peers"]:
         if p["port"] == my_port:
@@ -257,18 +331,20 @@ def sync_chain_on_startup(my_port):
             continue
 
 def run_peer(my_port, tracker_ip, tracker_port):
+    """
+    Launch a peer node, register with the tracker, and start all threads.
+
+    Args:
+        my_port (int): This peer's port number.
+        tracker_ip (str): Tracker IP address.
+        tracker_port (int): Tracker port.
+    """
     register_with_tracker(tracker_ip, tracker_port, my_port)
     threading.Thread(target=periodically_refresh_peers, args=(tracker_ip, tracker_port), daemon=True).start()
     threading.Thread(target=send_heartbeat, args=(tracker_ip, tracker_port, my_port), daemon=True).start()
     threading.Thread(target=start_peer_server, args=(my_port,), daemon=True).start()
     threading.Thread(target=miner_loop, daemon=True).start()
     threading.Thread(target=sync_chain_on_startup, args=(my_port,), daemon=True).start()
-
-    # # Optional test TXs
-    if my_port == 10001:
-        mempool.append(Transaction("W001","2025-05-02","09:00","17:00","sigW","sigS"))
-    # elif my_port == 10002:
-    #     mempool.append(Transaction("W002","2025-05-02","09:00","17:00","sigW2","sigS2"))
 
     atexit.register(leave_network, tracker_ip, tracker_port, my_port)
     while True:

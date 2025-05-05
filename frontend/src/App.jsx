@@ -1,15 +1,15 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
   useNavigate,
-} from 'react-router-dom';
-import './App.css';
+} from "react-router-dom";
+import "./App.css";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5005';
-const CREDENTIALS = { worker1: 'pass1', manager1: 'pass2' };
+const API_URL = "http://localhost:9002";
+const CREDENTIALS = { worker1: "pass1", manager1: "pass2" };
 
 // — Auth boilerplate —
 const AuthContext = createContext();
@@ -18,12 +18,12 @@ function useAuth() {
 }
 function AuthProvider({ children }) {
   const [auth, setAuth] = useState({
-    user: sessionStorage.getItem('user'),
-    role: sessionStorage.getItem('role'),
+    user: sessionStorage.getItem("user"),
+    role: sessionStorage.getItem("role"),
   });
   const login = (u, r) => {
-    sessionStorage.setItem('user', u);
-    sessionStorage.setItem('role', r);
+    sessionStorage.setItem("user", u);
+    sessionStorage.setItem("role", r);
     setAuth({ user: u, role: r });
   };
   const logout = () => {
@@ -50,18 +50,18 @@ function Protected({ role, children }) {
 function LoginPage() {
   const navigate = useNavigate();
   const auth = useAuth();
-  const [userInput, setUserInput] = useState('');
-  const [passInput, setPassInput] = useState('');
-  const [error, setError] = useState('');
+  const [userInput, setUserInput] = useState("");
+  const [passInput, setPassInput] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = e => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (CREDENTIALS[userInput] === passInput) {
-      const role = userInput.startsWith('worker') ? 'worker' : 'manager';
+      const role = userInput.startsWith("worker") ? "worker" : "manager";
       auth.login(userInput, role);
       navigate(`/${role}`);
     } else {
-      setError('Invalid credentials');
+      setError("Invalid credentials");
     }
   };
 
@@ -74,19 +74,20 @@ function LoginPage() {
           <input
             placeholder="Username"
             value={userInput}
-            onChange={e => setUserInput(e.target.value)}
+            onChange={(e) => setUserInput(e.target.value)}
             required
           />
           <input
             type="password"
             placeholder="Password"
             value={passInput}
-            onChange={e => setPassInput(e.target.value)}
+            onChange={(e) => setPassInput(e.target.value)}
             required
           />
           <button>Log In</button>
           <small className="creds">
-            Worker: worker1 / pass1<br />
+            Worker: worker1 / pass1
+            <br />
             Manager: manager1 / pass2
           </small>
         </form>
@@ -98,13 +99,15 @@ function LoginPage() {
 // — Worker Dashboard —
 function WorkerPage() {
   const { user, logout } = useAuth();
-  const [date, setDate] = useState('');
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
-  const [sig, setSig] = useState('');
+  const [date, setDate] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [sig, setSig] = useState("");
   const [shifts, setShifts] = useState([]);
 
-  useEffect(() => { fetchChain(); }, []);
+  useEffect(() => {
+    fetchChain();
+  }, []);
   async function fetchChain() {
     const res = await fetch(`${API_URL}/chain`);
     setShifts(await res.json());
@@ -113,8 +116,8 @@ function WorkerPage() {
   async function logShift(e) {
     e.preventDefault();
     await fetch(`${API_URL}/submit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: user,
         password: CREDENTIALS[user],
@@ -140,25 +143,25 @@ function WorkerPage() {
             <input
               type="date"
               value={date}
-              onChange={e => setDate(e.target.value)}
+              onChange={(e) => setDate(e.target.value)}
               required
             />
             <input
               type="time"
               value={start}
-              onChange={e => setStart(e.target.value)}
+              onChange={(e) => setStart(e.target.value)}
               required
             />
             <input
               type="time"
               value={end}
-              onChange={e => setEnd(e.target.value)}
+              onChange={(e) => setEnd(e.target.value)}
               required
             />
             <input
               placeholder="Your Signature"
               value={sig}
-              onChange={e => setSig(e.target.value)}
+              onChange={(e) => setSig(e.target.value)}
               required
             />
             <button type="submit">Submit</button>
@@ -178,18 +181,20 @@ function ManagerPage() {
   const { logout } = useAuth();
   const [shifts, setShifts] = useState([]);
 
-  useEffect(() => { fetchChain(); }, []);
+  useEffect(() => {
+    fetchChain();
+  }, []);
   async function fetchChain() {
     const res = await fetch(`${API_URL}/chain`);
     setShifts(await res.json());
   }
   async function decision(hash, idx, action) {
     await fetch(`${API_URL}/${action}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: 'manager1',
-        password: 'pass2',
+        username: "manager1",
+        password: "pass2",
         block_hash: hash,
         tx_index: idx,
       }),
@@ -210,8 +215,8 @@ function ManagerPage() {
             <ShiftList
               shifts={shifts}
               showApprove={true}
-              onApprove={(h, i) => decision(h, i, 'approve')}
-              onReject={(h, i) => decision(h, i, 'reject')}
+              onApprove={(h, i) => decision(h, i, "approve")}
+              onReject={(h, i) => decision(h, i, "reject")}
             />
           </div>
         </div>
@@ -224,17 +229,25 @@ function ManagerPage() {
 function ShiftList({ shifts, showApprove, onApprove, onReject }) {
   return (
     <ul className="shift-list">
-      {shifts.map(b =>
+      {shifts.map((b) =>
         b.transactions.map((tx, i) => (
           <li key={`${b.hash}-${i}`}>
-            <span>#{b.index} {tx.date} {tx.shift_start}-{tx.shift_end}</span>
+            <span>
+              #{b.index} {tx.date} {tx.shift_start}-{tx.shift_end}
+            </span>
             <div>
               {showApprove && !tx.supervisor_signature && (
                 <>
-                  <button className="btn-accept" onClick={() => onApprove(b.hash, i)}>
+                  <button
+                    className="btn-accept"
+                    onClick={() => onApprove(b.hash, i)}
+                  >
                     Approve
                   </button>
-                  <button className="btn-reject" onClick={() => onReject(b.hash, i)}>
+                  <button
+                    className="btn-reject"
+                    onClick={() => onReject(b.hash, i)}
+                  >
                     Reject
                   </button>
                 </>

@@ -9,6 +9,13 @@ peer_list = []      # each entry: { ip, port, last_seen }
 TTL = 30            # seconds before we consider a peer dead
 
 def handle_client(conn, addr):
+    """
+    Handle incoming connections from peers and process their messages.
+
+    Args:
+        conn (socket): The socket connection object.
+        addr (tuple): The address (IP, port) of the connecting peer.
+    """
     global peer_list
     try:
         data = conn.recv(1024).decode()
@@ -53,7 +60,9 @@ def handle_client(conn, addr):
         conn.close()
 
 def broadcast_peer_list():
-    """Push the updated peer_list out to every live peer."""
+    """
+    Push the current list of known peers to every peer in the network.
+    """
     for p in peer_list:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -67,7 +76,9 @@ def broadcast_peer_list():
             pass
 
 def prune_stale_peers():
-    """Every TTL seconds, drop peers with no heartbeat."""
+    """
+    Periodically remove peers that have not sent a heartbeat within the TTL window.
+    """
     while True:
         now = time.time()
         before = len(peer_list)
@@ -78,6 +89,12 @@ def prune_stale_peers():
         time.sleep(TTL)
 
 def start_tracker(port=9000):
+    """
+    Start the tracker server to handle peer connections.
+
+    Args:
+        port (int): Port to listen on. Defaults to 9000.
+    """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(("", port))
     s.listen()
