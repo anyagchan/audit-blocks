@@ -1,0 +1,164 @@
+:root {
+  --color-bg: #f3f6f9;
+  --color-card: #fff;
+  --color-primary: #4f46e5;
+  --color-secondary: #10b981;
+  --color-danger: #ef4444;
+  --color-text: #1f2937;
+  --color-border: #d1d5db;
+  --radius: 0.5rem;
+  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+  --transition: 0.2s;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Page wrappers */
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+/* Login */
+.login-container {
+  width: 360px;
+}
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Dashboard */
+.dashboard-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.topbar {
+  background: var(--color-card);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Grid for cards */
+.dash-grid {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Card base */
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+/* Form & list cards */
+.form-card {
+  flex: 1 1 350px;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+}
+.list-card {
+  flex: 2 1 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Inputs */
+input {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  transition: var(--transition);
+}
+input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.2);
+}
+
+/* Buttons */
+button {
+  padding: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: #fff;
+  font-weight: 600;
+  transition: var(--transition);
+}
+button:hover {
+  filter: brightness(1.05);
+}
+.login-card button,
+.form-card button {
+  background: var(--color-primary);
+}
+.topbar button,
+.btn-reject {
+  background: var(--color-danger);
+}
+.btn-accept {
+  background: var(--color-secondary);
+}
+
+/* Lists */
+.shift-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+}
+.shift-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-card);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* Text */
+.error {
+  color: var(--color-danger);
+}
+.creds {
+  font-size: 0.85rem;
+  color: var(--color-border);
+  margin-top: 0.5rem;
+  text-align: left;
+}
+.status {
+  font-weight: 600;
+  color: var(--color-primary);
+}
