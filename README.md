@@ -6,6 +6,12 @@
 
 [https://github.com/anyagchan/audit-blocks](https://github.com/anyagchan/audit-blocks)
 
+## Description
+
+This project implements a peer-to-peer blockchain system designed for garment factories to securely log and verify worker shift hours. The system provides tamper-proof logging through cryptographic signatures and distributed consensus, ensuring that shift records are authentic, auditable, and resistant to fraud or manipulation.
+
+Workers record their shift start and end times, while supervisors digitally sign and verify each entry to confirm its authenticity. These signed records are bundled into blocks, mined through a proof-of-work mechanism, and distributed across a decentralized network of peers. The blockchain ensures that all shift data remains immutable and verifiable, providing a transparent and trustworthy log for compliance, auditing, and fraud prevention.
+
 ## Structure of the Code
 
 - **`peer.py`**: Implementation for peer node logic
